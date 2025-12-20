@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>NCCU 排課系統 - 登入</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; padding-top: 50px; }
+        .box { border: 1px solid #ccc; padding: 20px; border-radius: 8px; width: 300px; }
+        input { width: 90%; padding: 8px; margin: 10px 0; }
+        button { width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .toggle { font-size: 12px; color: blue; cursor: pointer; text-align: center; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2 id="title">教師登入</h2>
+        <input type="text" id="name" placeholder="輸入名字 (帳號)">
+        <input type="password" id="password" placeholder="輸入密碼">
+        <button onclick="handleAction()" id="actionBtn">登入</button>
+        
+        <div class="toggle" onclick="toggleMode()">還沒有帳號？點此註冊</div>
+    </div>
+
+    <script>
+        let isLoginMode = true;
+
+        function toggleMode() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('title').innerText = isLoginMode ? "教師登入" : "教師註冊";
+            document.getElementById('actionBtn').innerText = isLoginMode ? "登入" : "註冊";
+            document.querySelector('.toggle').innerText = isLoginMode ? "還沒有帳號？點此註冊" : "已有帳號？點此登入";
+        }
+
+        async function handleAction() {
+            const name = document.getElementById('name').value;
+            const password = document.getElementById('password').value;
+            
+            // 決定要呼叫哪個 API
+            const url = isLoginMode ? '/api/teachers/login' : '/api/teachers/register';
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name: name, password: password })
+            });
+
+            if (response.ok) {
+                const data = await response.text(); // 註冊可能回傳空或物件，這裡簡單處理
+                if (data) {
+                    const teacher = JSON.parse(data);
+                    alert(isLoginMode ? "登入成功！" : "註冊成功，請登入！");
+                    if (isLoginMode) {
+                        // 把老師 ID 存在瀏覽器，以便下一頁使用
+                        localStorage.setItem('teacherId', teacher.id);
+                        localStorage.setItem('teacherName', teacher.name);
+                        localStorage.setItem('teacherGrade', teacher.grade || ""); // 如果有年級就存，沒有存空
+                        window.location.href = 'index.html'; // 跳轉到主頁
+                    } else {
+                        toggleMode(); // 註冊完切換回登入
+                    }
+                } else {
+                    alert("帳號或密碼錯誤");
+                }
+            } else {
+                alert("系統錯誤");
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.1'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // 1. 資料庫 (JPA)
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    
+    // 2. 網頁伺服器
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    
+    // 3. Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    
+    // 4. PostgreSQL 驅動 (給正式環境用)
+    runtimeOnly 'org.postgresql:postgresql'
+    
+    // 5. 測試相關
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

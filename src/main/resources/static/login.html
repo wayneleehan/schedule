@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>排課系統 - 登入</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; padding-top: 100px; background-color: #f0f2f5; }
+        .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 320px; text-align: center; }
+        h2 { margin-bottom: 20px; color: #333; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 12px; background-color: #0d6efd; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin-top: 10px; font-weight: bold; transition: background 0.2s; }
+        button:hover { background-color: #0b5ed7; }
+        .toggle { margin-top: 20px; color: #0d6efd; cursor: pointer; font-size: 14px; text-decoration: none; }
+        .toggle:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 id="title">教師登入</h2>
+        <input type="text" id="name" placeholder="輸入名字 (帳號)">
+        <input type="password" id="password" placeholder="輸入密碼">
+        <button onclick="handleAction()" id="btnText">登入</button>
+        
+        <div class="toggle" onclick="toggleMode()" id="toggleText">還沒有帳號？點此註冊</div>
+    </div>
+
+    <script>
+        let isLogin = true;
+
+        function toggleMode() {
+            isLogin = !isLogin;
+            document.getElementById('title').innerText = isLogin ? "教師登入" : "建立新帳號";
+            document.getElementById('btnText').innerText = isLogin ? "登入" : "註冊";
+            document.getElementById('toggleText').innerText = isLogin ? "還沒有帳號？點此註冊" : "已有帳號？返回登入";
+        }
+
+        async function handleAction() {
+            const name = document.getElementById('name').value;
+            const password = document.getElementById('password').value;
+            
+            if(!name || !password) { alert("請輸入帳號和密碼"); return; }
+
+            const api = isLogin ? '/api/teachers/login' : '/api/teachers/register';
+
+            try {
+                const res = await fetch(api, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ name: name, password: password })
+                });
+
+                if (res.ok) {
+                    const data = await res.text();
+                    if (data) {
+                        const teacher = JSON.parse(data);
+                        
+                        if (isLogin) {
+                            // ✅ 修正重點：這裡要把所有資料都存進去！
+                            localStorage.setItem('teacherId', teacher.id);
+                            localStorage.setItem('teacherName', teacher.name);
+                            // 加上 || "" 避免 null 變成字串 "null"
+                            localStorage.setItem('teacherGrade', teacher.grade || ""); 
+                            localStorage.setItem('teacherType', teacher.type || "");   
+                            
+                            alert("登入成功！");
+                            window.location.href = "index.html";
+                        } else {
+                            alert("註冊成功！請直接登入。");
+                            toggleMode();
+                        }
+                    } else {
+                        alert("登入失敗：帳號或密碼錯誤");
+                    }
+                } else {
+                    alert("系統錯誤");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("連線失敗");
+            }
+        }
+    </script>
+</body>
+</html>
