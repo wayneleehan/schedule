@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>教師列表 (後台管理)</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 30px; background-color: #f8f9fa; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #343a40; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        .btn-back { display: block; width: 100px; margin: 0 auto 20px auto; padding: 10px; background: #6c757d; color: white; text-align: center; border-radius: 5px; text-decoration: none; }
+        .btn-back:hover { background: #5a6268; }
+        .tag { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .tag-homeroom { background: #e3f2fd; color: #0d47a1; } /* 班導藍色 */
+        .tag-subject { background: #fff3e0; color: #e65100; }  /* 科任橘色 */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="login.html" class="btn-back">回登入頁</a>
+        <h2>📋 所有註冊教師列表</h2>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>姓名 (帳號)</th>
+                    <th>身分</th>
+                    <th>年級/負責班級</th>
+                    <th>密碼 (開發用)</th>
+                </tr>
+            </thead>
+            <tbody id="teacherTable">
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        fetch('/api/teachers')
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById('teacherTable');
+                data.forEach(t => {
+                    const row = document.createElement('tr');
+                    
+                    // 判斷身分顯示
+                    let typeLabel = "未設定";
+                    let typeClass = "";
+                    if (t.type === 'HOMEROOM') { 
+                        typeLabel = "班導師"; 
+                        typeClass = "tag-homeroom";
+                    } else if (t.type === 'SUBJECT') { 
+                        typeLabel = "科任教師"; 
+                        typeClass = "tag-subject";
+                    }
+
+                    row.innerHTML = `
+                        <td>${t.id}</td>
+                        <td style="font-weight:bold;">${t.name}</td>
+                        <td><span class="tag ${typeClass}">${typeLabel}</span></td>
+                        <td>${t.grade ? t.grade + " 年級" : "<span style='color:#ccc'>-</span>"}</td>
+                        <td style="color:#888; font-size:0.9em;">${t.password}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            })
+            .catch(err => console.error("無法載入資料", err));
+    </script>
+</body>
+</html>

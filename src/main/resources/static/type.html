@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>設定類型</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 50px; background-color: #f8f9fa; }
+        .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 400px; text-align: center; }
+        .progress { color: #888; margin-bottom: 20px; font-size: 14px; }
+        .checkbox-group { display: flex; flex-direction: column; gap: 10px; text-align: left; margin: 20px 0; }
+        .checkbox-option { padding: 15px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; }
+        .checkbox-option:hover { background-color: #f1f3f5; }
+        .checkbox-option:has(input:checked) { border-color: #198754; background-color: #e8f5e9; color: #198754; font-weight: bold; }
+        input { margin-right: 10px; transform: scale(1.2); }
+        
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { flex: 1; padding: 12px; border: none; border-radius: 50px; cursor: pointer; font-size: 16px; }
+        .btn-prev { background-color: #e9ecef; color: #333; }
+        .btn-next { background-color: #198754; color: white; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="progress">設定流程：2 / 4</div>
+        <h2>您的教師身份是？</h2>
+        
+        <div class="checkbox-group">
+            <label class="checkbox-option"><input type="checkbox" name="type" value="HOMEROOM" onclick="selectOne(this)"> 班導師 (Homeroom)</label>
+            <label class="checkbox-option"><input type="checkbox" name="type" value="SUBJECT" onclick="selectOne(this)"> 科任教師 (Subject)</label>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-prev" onclick="location.href='grade.html'">上一步</button>
+            <button class="btn btn-next" onclick="nextStep()">下一步</button>
+        </div>
+    </div>
+
+    <script>
+        const tid = localStorage.getItem('teacherId');
+        if(!tid) window.location.href = "login.html";
+
+        const saved = localStorage.getItem('teacherType');
+        if(saved) {
+            const el = document.querySelector(`input[value="${saved}"]`);
+            if(el) el.checked = true;
+        }
+
+        function selectOne(checkbox) {
+            document.querySelectorAll('input[name="type"]').forEach(el => {
+                if(el !== checkbox) el.checked = false;
+            });
+        }
+
+        function nextStep() {
+            const selected = document.querySelector('input[name="type"]:checked');
+            if(!selected) { alert("請選擇類型"); return; }
+            
+            fetch(`/api/teachers/${tid}/type`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: selected.value
+            }).then(() => {
+                localStorage.setItem('teacherType', selected.value);
+                // ✅ 跳轉到 courses.html
+                window.location.href = "courses.html";
+            });
+        }
+    </script>
+</body>
+</html>

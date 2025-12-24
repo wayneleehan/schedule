@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>設定空堂</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 30px; background-color: #f8f9fa; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 600px; text-align: center; }
+        .progress { color: #888; margin-bottom: 10px; font-size: 14px; }
+        
+        .grid-container { 
+            display: grid; grid-template-columns: 50px repeat(5, 1fr); gap: 2px; 
+            margin: 20px 0; user-select: none;
+        }
+        .grid-header { background: #333; color: white; padding: 8px; font-weight: bold; border-radius: 4px; }
+        .period-label { background: #eee; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        
+        .grid-cell { 
+            background: #d4edda; height: 45px; border: 1px solid #ccc; border-radius: 4px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            font-size: 14px; color: #155724;
+        }
+        .grid-cell.busy { background: #f8d7da; color: #721c24; font-weight: bold; border-color: #f5c6cb; }
+        
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { flex: 1; padding: 12px; border: none; border-radius: 50px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .btn-prev { background-color: #e9ecef; color: #333; }
+        .btn-finish { background-color: #0d6efd; color: white; box-shadow: 0 4px 6px rgba(13,110,253,0.3); }
+        .btn-finish:hover { background-color: #0b5ed7; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="progress">設定流程：4 / 4</div>
+        <h2>設定不排課時間</h2>
+        <p style="color:#666; font-size:14px;">請點擊或拖曳選取 <span style="color:#dc3545; font-weight:bold;">無法排課</span> 的紅色時段</p>
+
+        <div class="grid-container" id="scheduleGrid"></div>
+
+        <div class="btn-group">
+            <button class="btn btn-prev" onclick="location.href='courses.html'">上一步</button>
+            <button class="btn btn-finish" onclick="finish()">完成設定，開始排課 🚀</button>
+        </div>
+    </div>
+
+    <script src="js/availability.js"></script>
+</body>
+</html>

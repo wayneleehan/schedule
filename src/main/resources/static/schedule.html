@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>排課工作台</title>
     <style>
-        /* 樣式保持原樣，因為之前設計得不錯 */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; height: 100vh; margin: 0; overflow: hidden; background-color: #f8f9fa; }
         
         .left-panel { flex: 3; padding: 20px; display: flex; flex-direction: column; }
@@ -12,7 +11,7 @@
             display: grid; grid-template-columns: 60px repeat(5, 1fr); gap: 1px; 
             flex-grow: 1; margin-top: 10px; background: #ced4da; 
             border: 2px solid #ced4da; border-radius: 4px;
-            user-select: none; /* 必備：防止選取文字 */
+            user-select: none; 
         }
         .grid-header { background: #343a40; color: white; text-align: center; padding: 10px; font-weight: bold; }
         .period-label { background: #e9ecef; color: #495057; display: flex; align-items: center; justify-content: center; font-weight: bold; }
@@ -21,6 +20,7 @@
             background: white; display: flex; align-items: center; justify-content: center; 
             position: relative; min-height: 50px; font-size: 16px; font-weight: bold; color: #333;
             cursor: pointer;
+            flex-direction: column; /* 讓小字可以換行顯示 */
         }
         .grid-cell:hover { filter: brightness(0.95); }
         .grid-cell.busy { 
@@ -70,243 +70,28 @@
         <p style="font-size:13px; color:#666;">點選右側課程，然後在左側格子滑動</p>
         <div class="course-pool" id="coursePool"></div>
         <button class="btn-save" onclick="saveSchedule()">💾 儲存課表</button>
-        <button class="btn-back" onclick="location.href='index.html'">回上一頁</button>
+        <button class="btn-save" style="background-color: #6f42c1; margin-top: 5px;" onclick="autoSchedule()">🪄 自動排課</button>
+        <button class="btn-back" onclick="location.href='login.html'">回登入頁</button>
+        <button class="btn-back" onclick="location.href='availability.html'">回設定頁</button>
     </div>
+ 
+    <script src="js/schedule.js"></script>
 
-    <script>
-        const tid = localStorage.getItem('teacherId');
-        const tName = localStorage.getItem('teacherName');
-        document.getElementById('teacherName').innerText = tName;
-
-        const DAYS = ['週一', '週二', '週三', '週四', '週五'];
-        let busySlots = [];
-        let courseNeeds = {}; 
-        
-        const PALETTE = {
-            '國文': '#FFB7B2', '英文': '#AEC6CF', '數學': '#B9D7EA',
-            '自然': '#C8E6C9', '社會': '#E6EE9C', 'default': '#E0E0E0'
-        };
-
-        // --- 核心變數：跟 index.html 一模一樣的邏輯 ---
-        let isMouseDown = false; 
-        let selectedSubject = null;
-        let isEraser = false;
-
-        // 初始化
-        (async function init() {
-            try {
-                await loadAvailability();
-                await loadRequirements();
-                renderGrid();
-                await loadExistingSchedule(); 
-                renderSidebar();
-                autoSelectFirstSubject();     
-            } catch (e) {
-                console.error(e);
-            }
-        })();
-
-        async function loadAvailability() {
-            const res = await fetch(`/api/teachers/${tid}/availability`);
-            busySlots = await res.json();
-        }
-
-        async function loadRequirements() {
-            const res = await fetch(`/api/teachers/${tid}/courses`);
-            const data = await res.json();
-            data.forEach(c => courseNeeds[c.subject] = c.sessions);
-        }
-
-        // --- 1. 渲染網格 ---
-        function renderGrid() {
-            const grid = document.getElementById('scheduleGrid');
-            grid.innerHTML = '<div class="grid-header">節</div>';
-            DAYS.forEach(d => grid.innerHTML += `<div class="grid-header">${d}</div>`);
-
-            for (let p = 1; p <= 8; p++) {
-                grid.innerHTML += `<div class="period-label">${p}</div>`;
-                for (let d = 1; d <= 5; d++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'grid-cell';
-                    cell.dataset.day = d;
-                    cell.dataset.period = p;
-
-                    // 檢查是否忙碌
-                    const isBusy = busySlots.some(b => b.dayOfWeek === d && b.period === p);
-                    if (isBusy) {
-                        cell.classList.add('busy');
-                        cell.innerText = "✖";
-                    } else {
-                        // --- 這裡的邏輯改得跟 index.html 的 toggleCell 完全一樣 ---
-                        
-                        // 1. 滑鼠按下：開始畫，並標記 isMouseDown = true
-                        cell.addEventListener('mousedown', () => {
-                            isMouseDown = true;
-                            paintCell(cell);
-                        });
-
-                        // 2. 滑鼠經過：如果 isMouseDown 為 true，就繼續畫
-                        cell.addEventListener('mouseover', () => { // 這裡改回 mouseover，這在 index.html 運作正常
-                            if (isMouseDown) {
-                                paintCell(cell);
-                            }
-                        });
-
-                        // 3. 點擊：為了保險起見，點一下也要能畫
-                        cell.addEventListener('click', () => {
-                            paintCell(cell);
-                        });
-                    }
-                    grid.appendChild(cell);
-                }
-            }
+    <div id="chatModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; width:400px; border-radius:12px; overflow:hidden; box-shadow:0 10px 25px rgba(0,0,0,0.2); display:flex; flex-direction:column;">
             
-            // 全局放開滑鼠：停止繪畫
-            document.addEventListener('mouseup', () => {
-                isMouseDown = false;
-            });
-        }
+            <div style="background:#0d6efd; color:white; padding:15px; font-weight:bold; display:flex; justify-content:between; align-items:center;">
+                <span>💬 來自科任老師的訊息</span>
+                <span onclick="closeChat()" style="cursor:pointer; font-size:1.2em;">&times;</span>
+            </div>
 
-        // --- 2. 塗色邏輯 ---
-        function paintCell(cell) {
-            // 防呆：如果已經是忙碌狀態，不動作
-            if (cell.classList.contains('busy')) return;
+            <div id="chatContent" style="padding:20px; height:250px; overflow-y:auto; background:#f0f2f5; display:flex; flex-direction:column; gap:10px;">
+                </div>
 
-            const oldSubject = cell.dataset.subject;
-
-            // A. 橡皮擦模式
-            if (isEraser) {
-                if (oldSubject) {
-                    clearCell(cell); // 擦掉
-                    renderSidebar(); // 更新數字
-                }
-                return;
-            }
-
-            // B. 畫筆模式
-            if (!selectedSubject) return; // 沒選筆刷
-
-            // 如果該格已經是這個科目，不用重畫
-            if (oldSubject === selectedSubject) return;
-
-            // 檢查餘額 (如果沒扣打了，就不准畫)
-            const remaining = getRemainingCount(selectedSubject);
-            if (remaining <= 0) return; 
-
-            // 執行塗色
-            fillCell(cell, selectedSubject);
-            renderSidebar(); // 更新數字
-        }
-
-        function fillCell(cell, subject) {
-            cell.dataset.subject = subject;
-            cell.innerText = subject;
-            cell.style.backgroundColor = getColor(subject);
-        }
-
-        function clearCell(cell) {
-            delete cell.dataset.subject;
-            cell.innerText = "";
-            cell.style.backgroundColor = "white";
-        }
-
-        // --- 輔助函式 ---
-        function getColor(subject) {
-            if (PALETTE[subject]) return PALETTE[subject];
-            let hash = 0;
-            for (let i = 0; i < subject.length; i++) hash = subject.charCodeAt(i) + ((hash << 5) - hash);
-            const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
-            return '#' + "00000".substring(0, 6 - c.length) + c;
-        }
-
-        function getRemainingCount(subject) {
-            const total = courseNeeds[subject] || 0;
-            const placed = document.querySelectorAll(`.grid-cell[data-subject="${subject}"]`).length;
-            return total - placed;
-        }
-
-        function renderSidebar() {
-            const pool = document.getElementById('coursePool');
-            const currentActive = selectedSubject; 
-            pool.innerHTML = '';
-            
-            for (const [subject, total] of Object.entries(courseNeeds)) {
-                const remaining = getRemainingCount(subject);
-                const div = document.createElement('div');
-                div.className = `pool-item ${remaining <= 0 ? 'empty' : ''}`;
-                
-                if (subject === currentActive && !isEraser) {
-                    div.classList.add('active');
-                }
-                
-                const colorBox = `<span style="display:inline-block; width:15px; height:15px; background:${getColor(subject)}; border-radius:50%; margin-right:10px; border:1px solid rgba(0,0,0,0.1);"></span>`;
-                
-                div.innerHTML = `
-                    <div style="display:flex; align-items:center;">
-                        ${colorBox} <span>${subject}</span>
-                    </div>
-                    <span class="badge ${remaining === 0 ? 'done' : ''}">${remaining > 0 ? '剩 '+remaining : 'OK'}</span>
-                `;
-                
-                div.onclick = () => selectSubject(subject);
-                pool.appendChild(div);
-            }
-        }
-
-        function selectSubject(subject) {
-            selectedSubject = subject;
-            isEraser = false;
-            document.getElementById('eraserBtn').classList.remove('active');
-            renderSidebar(); 
-        }
-
-        function selectEraser() {
-            isEraser = true;
-            document.getElementById('eraserBtn').classList.add('active');
-            renderSidebar(); // 移除 sidebar 的 active
-        }
-
-        function autoSelectFirstSubject() {
-            for (const [subject, total] of Object.entries(courseNeeds)) {
-                if (getRemainingCount(subject) > 0) {
-                    selectSubject(subject);
-                    break;
-                }
-            }
-        }
-
-        async function loadExistingSchedule() {
-            const res = await fetch(`/api/teachers/${tid}/schedule`);
-            const data = await res.json();
-            data.forEach(item => {
-                const cell = document.querySelector(`.grid-cell[data-day="${item.dayOfWeek}"][data-period="${item.period}"]`);
-                if (cell && !cell.classList.contains('busy')) {
-                    fillCell(cell, item.subject);
-                }
-            });
-        }
-
-        async function saveSchedule() {
-            const items = [];
-            document.querySelectorAll('.grid-cell').forEach(cell => {
-                if (cell.dataset.subject) {
-                    items.push({
-                        dayOfWeek: parseInt(cell.dataset.day),
-                        period: parseInt(cell.dataset.period),
-                        subject: cell.dataset.subject
-                    });
-                }
-            });
-
-            const res = await fetch(`/api/teachers/${tid}/schedule`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(items)
-            });
-
-            if(res.ok) alert("課表儲存成功！🎉");
-            else alert("儲存失敗");
-        }
-    </script>
+            <div style="padding:15px; border-top:1px solid #ddd; background:white; text-align:right;">
+                <button onclick="closeChat()" style="background:#0d6efd; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">知道了，我來手動排</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

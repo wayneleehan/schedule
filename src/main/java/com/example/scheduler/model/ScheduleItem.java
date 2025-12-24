@@ -31,14 +31,43 @@ public class ScheduleItem {
     }
 
     // --- Getters & Setters ---
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public Integer getDayOfWeek() { return dayOfWeek; }
-    public void setDayOfWeek(Integer dayOfWeek) { this.dayOfWeek = dayOfWeek; }
-    public Integer getPeriod() { return period; }
-    public void setPeriod(Integer period) { this.period = period; }
-    public String getSubject() { return subject; }
-    public void setSubject(String subject) { this.subject = subject; }
-    public Teacher getTeacher() { return teacher; }
-    public void setTeacher(Teacher teacher) { this.teacher = teacher; }
+    public Long getId() {
+         return id; 
+    }
+
+    public void setId(Long id) {
+         this.id = id; 
+    }
+
+    public Integer getDayOfWeek() {
+         return dayOfWeek;
+    }
+
+    public void setDayOfWeek(Integer dayOfWeek) { 
+        this.dayOfWeek = dayOfWeek; 
+    }
+
+    public Integer getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(Integer period) { 
+        this.period = period; 
+    }
+
+    public String getSubject() { 
+        return subject; 
+    }
+
+    public void setSubject(String subject) { 
+        this.subject = subject; 
+    }
+
+    public Teacher getTeacher() { 
+        return teacher; 
+    }
+
+    public void setTeacher(Teacher teacher) { 
+        this.teacher = teacher; 
+    }
 }

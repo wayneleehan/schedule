@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>設定課程</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 50px; background-color: #f8f9fa; }
+        .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 400px; text-align: center; }
+        .progress { color: #888; margin-bottom: 20px; font-size: 14px; }
+        
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; text-align: left; }
+        .input-group label { display: block; font-weight: bold; margin-bottom: 5px; color: #555; }
+        .input-group input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; text-align: center; font-size: 16px; }
+        
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { flex: 1; padding: 12px; border: none; border-radius: 50px; cursor: pointer; font-size: 16px; }
+        .btn-prev { background-color: #e9ecef; color: #333; }
+        .btn-next { background-color: #fd7e14; color: white; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="progress">設定流程：3 / 4</div>
+        <h2>每週需要上幾節課？</h2>
+        <p style="font-size: 0.9em; color: #666;">輸入 0 代表不教該科</p>
+        
+        <div class="input-grid" id="courseInputs"></div>
+
+        <div class="btn-group">
+            <button class="btn btn-prev" onclick="location.href='type.html'">上一步</button>
+            <button class="btn btn-next" onclick="nextStep()">下一步</button>
+        </div>
+    </div>
+
+    <script>
+        const tid = localStorage.getItem('teacherId');
+        if(!tid) window.location.href = "login.html";
+        
+        const SUBJECTS = ['國文', '英文', '數學', '自然', '社會'];
+        const container = document.getElementById('courseInputs');
+
+        SUBJECTS.forEach(sub => {
+            container.innerHTML += `
+                <div class="input-group">
+                    <label>${sub}</label>
+                    <input type="number" id="input_${sub}" min="0" max="20" value="0" onclick="this.select()">
+                </div>
+            `;
+        });
+
+        fetch(`/api/teachers/${tid}/courses`)
+            .then(res => res.json())
+            .then(data => {
+                data.forEach(item => {
+                    const el = document.getElementById(`input_${item.subject}`);
+                    if(el) el.value = item.sessions;
+                });
+            });
+
+        function nextStep() {
+            const payload = {};
+            SUBJECTS.forEach(sub => {
+                const val = document.getElementById(`input_${sub}`).value;
+                payload[sub] = parseInt(val) || 0;
+            });
+
+            fetch(`/api/teachers/${tid}/courses`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            }).then(() => {
+                // ✅ 跳轉到 availability.html
+                window.location.href = "availability.html";
+            });
+        }
+    </script>
+</body>
+</html>

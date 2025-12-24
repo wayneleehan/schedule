@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>設定年級</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 50px; background-color: #f8f9fa; }
+        .card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 400px; text-align: center; }
+        .progress { color: #888; margin-bottom: 20px; font-size: 14px; }
+        .checkbox-group { display: flex; flex-direction: column; gap: 10px; text-align: left; margin: 20px 0; }
+        .checkbox-option { padding: 10px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; }
+        .checkbox-option:hover { background-color: #f1f3f5; }
+        .checkbox-option:has(input:checked) { border-color: #0d6efd; background-color: #e7f1ff; color: #0d6efd; font-weight: bold; }
+        input[type="checkbox"] { margin-right: 10px; transform: scale(1.2); }
+        .btn-next { background-color: #0d6efd; color: white; padding: 12px 30px; border: none; border-radius: 50px; cursor: pointer; font-size: 16px; margin-top: 20px; width: 100%; transition: 0.2s; }
+        .btn-next:hover { background-color: #0b5ed7; }
+        .logout { position: absolute; top: 20px; right: 20px; color: #dc3545; cursor: pointer; text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="logout" onclick="logout()">登出</div>
+    
+    <div class="card">
+        <div class="progress">設定流程：1 / 4</div>
+        <h2>您負責哪個年級？</h2>
+        
+        <div class="checkbox-group">
+            <label class="checkbox-option"><input type="checkbox" name="grade" value="1" onclick="selectOne(this)"> 一年級</label>
+            <label class="checkbox-option"><input type="checkbox" name="grade" value="2" onclick="selectOne(this)"> 二年級</label>
+            <label class="checkbox-option"><input type="checkbox" name="grade" value="3" onclick="selectOne(this)"> 三年級</label>
+            <label class="checkbox-option"><input type="checkbox" name="grade" value="4" onclick="selectOne(this)"> 四年級</label>
+            <label class="checkbox-option"><input type="checkbox" name="grade" value="5" onclick="selectOne(this)"> 五年級</label>
+            <label class="checkbox-option"><input type="checkbox" name="grade" value="6" onclick="selectOne(this)"> 六年級</label>
+        </div>
+
+        <button class="btn-next" onclick="nextStep()">下一步 (設定類型)</button>
+    </div>
+
+    <script>
+        const tid = localStorage.getItem('teacherId');
+        if(!tid) window.location.href = "login.html";
+
+        const saved = localStorage.getItem('teacherGrade');
+        if(saved) {
+            const el = document.querySelector(`input[value="${saved}"]`);
+            if(el) el.checked = true;
+        }
+
+        function selectOne(checkbox) {
+            document.querySelectorAll('input[name="grade"]').forEach(el => {
+                if(el !== checkbox) el.checked = false;
+            });
+        }
+
+        function nextStep() {
+            const selected = document.querySelector('input[name="grade"]:checked');
+            if(!selected) { alert("請選擇年級"); return; }
+            
+            fetch(`/api/teachers/${tid}/grade`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: selected.value
+            }).then(() => {
+                localStorage.setItem('teacherGrade', selected.value);
+                // ✅ 跳轉到 type.html
+                window.location.href = "type.html"; 
+            });
+        }
+        function logout() { localStorage.clear(); window.location.href="login.html"; }
+    </script>
+</body>
+</html>

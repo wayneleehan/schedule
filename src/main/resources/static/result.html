@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>排課結果確認</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; background-color: #f0f2f5; }
+        
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 80%; max-width: 900px; }
+        
+        h2 { text-align: center; color: #333; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 20px; }
+
+        .grid-container { 
+            display: grid; grid-template-columns: 60px repeat(5, 1fr); gap: 1px; 
+            background: #dee2e6; border: 2px solid #dee2e6; border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .grid-header { background: #343a40; color: white; text-align: center; padding: 12px; font-weight: bold; }
+        .period-label { background: #e9ecef; color: #495057; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        
+        .grid-cell { 
+            background: white; min-height: 60px; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; text-align: center;
+            font-size: 16px; font-weight: bold; color: #333; padding: 5px;
+        }
+        
+        /* 科目顏色標籤 */
+        .subject-tag { padding: 4px 8px; border-radius: 6px; background-color: #e3f2fd; color: #0d47a1; margin-bottom: 4px; }
+        .info-tag { font-size: 12px; color: #666; font-weight: normal; }
+
+        .btn-group { display: flex; justify-content: center; gap: 15px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; transition: 0.2s; }
+        .btn-print { background-color: #0d6efd; color: white; }
+        .btn-print:hover { background-color: #0b5ed7; }
+        .btn-back { background-color: #6c757d; color: white; }
+        .btn-back:hover { background-color: #5a6268; }
+
+        /* 列印時隱藏按鈕與背景色 */
+        @media print {
+            body { background: white; padding: 0; }
+            .card { box-shadow: none; width: 100%; max-width: 100%; padding: 0; }
+            .btn-group { display: none; }
+            .grid-container { border: 1px solid #000; }
+            .grid-header { background: #ddd !important; color: black; border: 1px solid #000; }
+            .grid-cell { border: 1px solid #000; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2 id="pageTitle">最終課表</h2>
+        <div class="subtitle" id="pageSubtitle"></div>
+
+        <div class="grid-container" id="scheduleGrid"></div>
+
+        <div class="btn-group">
+            <button class="btn btn-back" onclick="location.href='schedule.html'">✏️ 返回修改</button>
+            <button class="btn btn-print" onclick="window.print()">🖨️ 列印課表</button>
+        </div>
+    </div>
+
+    <script src="js/result.js"></script>
+</body>
+</html>
