@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(node *)",
+      "Bash(./gradlew projects *)",
+      "Bash(./gradlew compileJava)",
+      "Bash(./gradlew bootRun)",
+      "Bash(echo \"Backend PID: $!\")",
+      "Bash(npm run *)",
+      "Bash(echo \"Frontend PID: $!\")",
+      "Bash(docker compose up *)",
+      "Bash(psql --version)",
+      "Bash(curl -s http://localhost:8080/api/v1/teachers)",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s -X POST http://localhost:8080/api/v1/teachers/register -H 'Content-Type: application/json' -d '{\"name\":\"王小明\",\"password\":\"pass123\",\"grade\":3,\"type\":\"HOMEROOM\"}')",
+      "Bash(curl -s -X POST http://localhost:8080/api/v1/teachers/login -H 'Content-Type: application/json' -d '{\"name\":\"王小明\",\"password\":\"pass123\"}')",
+      "Bash(curl -s -X PUT http://localhost:8080/api/v1/teachers/10/courses -H 'Content-Type: application/json' -d '[{\"subject\":\"國文\",\"sessions\":4},{\"subject\":\"數學\",\"sessions\":4},{\"subject\":\"英文\",\"sessions\":3}]')",
+      "Bash(curl -s -X PUT http://localhost:8080/api/v1/teachers/10/availability -H 'Content-Type: application/json' -d '[{\"dayOfWeek\":1,\"period\":1},{\"dayOfWeek\":3,\"period\":5}]')",
+      "Bash(curl -s -X POST http://localhost:8080/api/v1/teachers/10/auto-schedule)",
+      "Bash(curl -s -X POST http://localhost:8080/api/v1/teachers/register -H 'Content-Type: application/json' -d '{\"name\":\"王小明\",\"password\":\"xxx\"}')",
+      "Bash(curl -s http://localhost:5173/)"
+    ]
+  }
+}
