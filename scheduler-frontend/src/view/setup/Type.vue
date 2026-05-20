@@ -22,31 +22,30 @@
   </template>
   
   <script setup>
-  import { ref, onMounted } from 'vue';
-  import { useRouter } from 'vue-router';
-  
-  const router = useRouter();
-  const tid = localStorage.getItem('teacherId');
-  const type = ref(null);
-  
+  import { ref, onMounted } from 'vue'
+  import { useRouter } from 'vue-router'
+  import { teacherApi } from '@/api/teacher'
+
+  const router = useRouter()
+  const tid = localStorage.getItem('teacherId')
+  const type = ref(null)
+
   onMounted(() => {
-    if (!tid) router.push('/login');
-    const saved = localStorage.getItem('teacherType');
-    if (saved) type.value = saved;
-  });
-  
+    if (!tid) router.push('/login')
+    const saved = localStorage.getItem('teacherType')
+    if (saved) type.value = saved
+  })
+
   const nextStep = async () => {
-    if (!type.value) { alert("請選擇類型"); return; }
-    
-    await fetch(`/api/teachers/${tid}/type`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: type.value // 注意後端接收的格式，這裡是純字串
-    });
-  
-    localStorage.setItem('teacherType', type.value);
-    router.push('/setup/courses');
-  };
+    if (!type.value) { alert('請選擇類型'); return }
+    try {
+      await teacherApi.updateType(tid, type.value)
+      localStorage.setItem('teacherType', type.value)
+      router.push('/setup/courses')
+    } catch (e) {
+      alert(e.message || '更新類型失敗')
+    }
+  }
   </script>
   
   <style scoped>

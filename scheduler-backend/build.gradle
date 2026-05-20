@@ -13,22 +13,6 @@ java {
     }
 }
 
-sourceSets {
-    main {
-        java {
-            srcDirs = ['scheduler-backend/main/java']
-        }
-        resources {
-            srcDirs = ['scheduler-backend/main/resources']
-        }
-    }
-    test {
-        java {
-            srcDirs = ['scheduler-backend/test/java']
-        }
-    }
-}
-
 repositories {
     mavenCentral()
 }

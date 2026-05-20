@@ -19,36 +19,35 @@
   </template>
   
   <script setup>
-  import { ref, onMounted } from 'vue';
-  import { useRouter } from 'vue-router';
-  
-  const router = useRouter();
-  const tid = localStorage.getItem('teacherId');
-  const selectedGrade = ref(null);
-  
+  import { ref, onMounted } from 'vue'
+  import { useRouter } from 'vue-router'
+  import { teacherApi } from '@/api/teacher'
+
+  const router = useRouter()
+  const tid = localStorage.getItem('teacherId')
+  const selectedGrade = ref(null)
+
   onMounted(() => {
-    if (!tid) router.push('/login');
-    const saved = localStorage.getItem('teacherGrade');
-    if (saved) selectedGrade.value = parseInt(saved);
-  });
-  
+    if (!tid) router.push('/login')
+    const saved = localStorage.getItem('teacherGrade')
+    if (saved) selectedGrade.value = parseInt(saved)
+  })
+
   const nextStep = async () => {
-    if (!selectedGrade.value) { alert("請選擇年級"); return; }
-    
-    await fetch(`/api/teachers/${tid}/grade`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: selectedGrade.value
-    });
-    
-    localStorage.setItem('teacherGrade', selectedGrade.value);
-    router.push('/setup/type');
-  };
-  
+    if (!selectedGrade.value) { alert('請選擇年級'); return }
+    try {
+      await teacherApi.updateGrade(tid, selectedGrade.value)
+      localStorage.setItem('teacherGrade', selectedGrade.value)
+      router.push('/setup/type')
+    } catch (e) {
+      alert(e.message || '更新年級失敗')
+    }
+  }
+
   const logout = () => {
-    localStorage.clear();
-    router.push('/login');
-  };
+    localStorage.clear()
+    router.push('/login')
+  }
   </script>
   
   <style scoped>

@@ -31,57 +31,59 @@
   </template>
   
   <script setup>
-  import { ref, onMounted } from 'vue';
-  import { useRouter } from 'vue-router';
-  
-  const router = useRouter();
-  const tid = localStorage.getItem('teacherId');
-  const days = ['週一', '週二', '週三', '週四', '週五'];
-  const busySet = ref(new Set()); // 使用 Set 儲存 "day-period" 字串，比 Array 更好操作
-  const isMouseDown = ref(false);
-  
+  import { ref, onMounted } from 'vue'
+  import { useRouter } from 'vue-router'
+  import { availabilityApi } from '@/api/teacher'
+
+  const router = useRouter()
+  const tid = localStorage.getItem('teacherId')
+  const days = ['週一', '週二', '週三', '週四', '週五']
+  const busySet = ref(new Set())
+  const isMouseDown = ref(false)
+
   onMounted(async () => {
-    if (!tid) router.push('/login');
-    
-    const res = await fetch(`/api/teachers/${tid}/availability`);
-    const data = await res.json();
-    data.forEach(slot => {
-      busySet.value.add(`${slot.dayOfWeek}-${slot.period}`);
-    });
-  });
-  
-  const isBusy = (d, p) => busySet.value.has(`${d}-${p}`);
-  
+    if (!tid) { router.push('/login'); return }
+    try {
+      const data = await availabilityApi.getAvailability(tid)
+      data.forEach(slot => {
+        busySet.value.add(`${slot.dayOfWeek}-${slot.period}`)
+      })
+    } catch (e) {
+      alert(e.message || '載入忙碌時段失敗')
+    }
+  })
+
+  const isBusy = (d, p) => busySet.value.has(`${d}-${p}`)
+
   const toggle = (d, p) => {
-    const key = `${d}-${p}`;
-    if (busySet.value.has(key)) busySet.value.delete(key);
-    else busySet.value.add(key);
-  };
-  
+    const key = `${d}-${p}`
+    if (busySet.value.has(key)) busySet.value.delete(key)
+    else busySet.value.add(key)
+  }
+
   const startToggle = (d, p) => {
-    isMouseDown.value = true;
-    toggle(d, p);
-  };
-  
+    isMouseDown.value = true
+    toggle(d, p)
+  }
+
   const onHover = (d, p) => {
-    if (isMouseDown.value) toggle(d, p);
-  };
-  
+    if (isMouseDown.value) toggle(d, p)
+  }
+
   const finish = async () => {
-    const busyList = [];
+    const busyList = []
     busySet.value.forEach(key => {
-      const [d, p] = key.split('-');
-      busyList.push({ dayOfWeek: parseInt(d), period: parseInt(p) });
-    });
-  
-    await fetch(`/api/teachers/${tid}/availability`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(busyList)
-    });
-    
-    router.push('/schedule');
-  };
+      const [d, p] = key.split('-')
+      busyList.push({ dayOfWeek: parseInt(d), period: parseInt(p) })
+    })
+
+    try {
+      await availabilityApi.updateAvailability(tid, busyList)
+      router.push('/schedule')
+    } catch (e) {
+      alert(e.message || '儲存忙碌時段失敗')
+    }
+  }
   </script>
   
   <style scoped>

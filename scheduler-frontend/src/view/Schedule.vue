@@ -72,71 +72,73 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, reactive } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { teacherApi, courseApi, availabilityApi } from '@/api/teacher'
 
-const router = useRouter();
-const days = ['週一', '週二', '週三', '週四', '週五'];
+const router = useRouter()
+const days = ['週一', '週二', '週三', '週四', '週五']
 const PALETTE = {
     '國文': '#FFB7B2', '英文': '#AEC6CF', '數學': '#B9D7EA',
-    '自然': '#C8E6C9', '社會': '#E6EE9C', '體育': '#FFECB3', 
+    '自然': '#C8E6C9', '社會': '#E6EE9C', '體育': '#FFECB3',
     '音樂': '#D1C4E9', '美術': '#F0F4C3', '電腦': '#B2DFDB'
-};
+}
 
-// 狀態變數
-const teacherName = ref(localStorage.getItem('teacherName'));
-const tid = localStorage.getItem('teacherId');
-const busySlots = ref([]); // [{dayOfWeek: 1, period: 1}, ...]
-const courseNeeds = ref({}); // { '國文': 4, ... }
-const scheduleData = reactive({}); // Key: "day-period", Value: { subject: '國文', info: '...' }
-const selectedSubject = ref(null);
-const isEraser = ref(false);
-const isMouseDown = ref(false);
+const teacherName = ref(localStorage.getItem('teacherName'))
+const tid = localStorage.getItem('teacherId')
+const busySlots = ref([])
+const courseNeeds = ref({})
+const scheduleData = reactive({})
+const selectedSubject = ref(null)
+const isEraser = ref(false)
+const isMouseDown = ref(false)
 
-// 衝突視窗相關
-const showConflictModal = ref(false);
-const conflictMessages = ref([]);
+const showConflictModal = ref(false)
+const conflictMessages = ref([])
 
 onMounted(async () => {
-  if (!tid) router.push('/login');
-  await loadAvailability();
-  await loadRequirements();
-  await loadExistingSchedule();
-});
+  if (!tid) { router.push('/login'); return }
+  await loadAvailability()
+  await loadRequirements()
+  await loadExistingSchedule()
+})
 
-// --- API 載入 ---
 const loadAvailability = async () => {
-  const res = await fetch(`/api/teachers/${tid}/availability`);
-  busySlots.value = await res.json();
-};
+  try {
+    busySlots.value = await availabilityApi.getAvailability(tid)
+  } catch (e) {
+    alert(e.message || '載入忙碌時段失敗')
+  }
+}
 
 const loadRequirements = async () => {
-  const res = await fetch(`/api/teachers/${tid}/courses`);
-  const data = await res.json();
-  const map = {};
-  data.forEach(c => map[c.subject] = c.sessions);
-  courseNeeds.value = map;
-  // 自動選擇第一個科目
-  const first = Object.keys(map)[0];
-  if (first) selectSubject(first);
-};
+  try {
+    const data = await courseApi.getCourses(tid)
+    const map = {}
+    data.forEach(c => { map[c.subject] = c.sessions })
+    courseNeeds.value = map
+    const first = Object.keys(map)[0]
+    if (first) selectSubject(first)
+  } catch (e) {
+    alert(e.message || '載入課程需求失敗')
+  }
+}
 
 const loadExistingSchedule = async () => {
-  // 這裡簡化：假設 API 路徑正確
-  const res = await fetch(`/api/teachers/${tid}/schedule`);
-  const data = await res.json();
-  
-  // 清空當前 schedule
-  for (const key in scheduleData) delete scheduleData[key];
-
-  data.forEach(item => {
-    const key = `${item.dayOfWeek}-${item.period}`;
-    scheduleData[key] = { 
+  try {
+    const data = await teacherApi.getMySchedule(tid)
+    for (const key in scheduleData) delete scheduleData[key]
+    data.forEach(item => {
+      const key = `${item.dayOfWeek}-${item.period}`
+      scheduleData[key] = {
         subject: item.subject,
-        info: item.teacher?.grade ? `去 ${item.teacher.grade} 年級` : '' 
-    };
-  });
-};
+        info: item.teacher?.grade ? `去 ${item.teacher.grade} 年級` : ''
+      }
+    })
+  } catch (e) {
+    alert(e.message || '載入課表失敗')
+  }
+}
 
 // --- 網格邏輯 ---
 const isBusy = (day, period) => {
@@ -208,47 +210,39 @@ const fillCell = (day, period) => {
     }
 };
 
-// --- 儲存與自動排課 ---
 const saveSchedule = async () => {
-    const items = [];
-    for (const [key, val] of Object.entries(scheduleData)) {
-        const [d, p] = key.split('-');
-        items.push({
-            dayOfWeek: parseInt(d),
-            period: parseInt(p),
-            subject: val.subject
-        });
-    }
-
-    const res = await fetch(`/api/teachers/${tid}/schedule`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(items)
-    });
-    
-    if (res.ok) alert("儲存成功！");
-    else alert("儲存失敗");
-};
+  const items = []
+  for (const [key, val] of Object.entries(scheduleData)) {
+    const [d, p] = key.split('-')
+    items.push({
+      dayOfWeek: parseInt(d),
+      period: parseInt(p),
+      subject: val.subject
+    })
+  }
+  try {
+    await teacherApi.saveSchedule(tid, items)
+    alert('儲存成功！')
+  } catch (e) {
+    alert(e.message || '儲存失敗')
+  }
+}
 
 const autoSchedule = async () => {
-    if(!confirm("這將會清除當前排課，確定嗎？")) return;
-    
-    // 這裡可以加 loading 狀態
-    const res = await fetch(`/api/teachers/${tid}/auto-schedule`, { method: 'POST' });
-    const data = await res.json();
-    
-    if (res.ok) {
-        await loadExistingSchedule(); // 重新讀取排好的課
-        
-        if (data.conflicts && data.conflicts.length > 0) {
-            conflictMessages.value = data.conflicts.map(c => ({ sender: '某老師', text: `衝突科目：${c}` })); // 簡化邏輯
-            showConflictModal.value = true;
-        } else {
-            alert("自動排課成功！");
-        }
+  if (!confirm('這將會清除當前排課，確定嗎？')) return
+  try {
+    const result = await teacherApi.autoSchedule(tid)
+    await loadExistingSchedule()
+    if (result.conflicts && result.conflicts.length > 0) {
+      conflictMessages.value = result.conflicts.map(c => ({ sender: '某老師', text: `衝突科目：${c}` }))
+      showConflictModal.value = true
+    } else {
+      alert('自動排課成功！')
     }
-};
-
+  } catch (e) {
+    alert(e.message || '自動排課失敗')
+  }
+}
 </script>
 
 <style scoped>

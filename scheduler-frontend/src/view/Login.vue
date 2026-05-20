@@ -16,69 +16,43 @@
 </template>
 
 <script setup>
-  import { ref, reactive } from 'vue';
-  import { useRouter } from 'vue-router';
-  
-  const router = useRouter();
-  const isLoginMode = ref(true);
-  const form = reactive({ name: '', password: '' });
-  
-  const toggleMode = () => {
-    isLoginMode.value = !isLoginMode.value;
-  };
-  
-  const handleAction = async () => {
-    if (!form.name || !form.password) {
-      alert("請輸入帳號和密碼");
-      return;
+import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { teacherApi } from '@/api/teacher'
+
+const router = useRouter()
+const isLoginMode = ref(true)
+const form = reactive({ name: '', password: '' })
+
+const toggleMode = () => {
+  isLoginMode.value = !isLoginMode.value
+}
+
+const handleAction = async () => {
+  if (!form.name || !form.password) {
+    alert('請輸入帳號和密碼')
+    return
+  }
+
+  try {
+    if (isLoginMode.value) {
+      const teacher = await teacherApi.login(form)
+      localStorage.setItem('teacherId', teacher.id)
+      localStorage.setItem('teacherName', teacher.name)
+      localStorage.setItem('teacherGrade', teacher.grade ?? '')
+      localStorage.setItem('teacherType', teacher.type ?? '')
+      alert('登入成功！')
+      router.push('/setup/grade')
+    } else {
+      await teacherApi.register(form)
+      alert('註冊成功！請直接登入。')
+      toggleMode()
     }
-  
-    const url = isLoginMode.value ? '/api/teachers/login' : '/api/teachers/register';
-  
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
-      });
-  
-      if (res.ok) {
-        const data = await res.text();
-        // 如果 data 有內容，代表成功拿到 Teacher 物件
-        if (data) {
-          const teacher = JSON.parse(data);
-          
-          if (isLoginMode.value) {
-            // --- 登入成功邏輯 ---
-            localStorage.setItem('teacherId', teacher.id);
-            localStorage.setItem('teacherName', teacher.name);
-            localStorage.setItem('teacherGrade', teacher.grade || "");
-            localStorage.setItem('teacherType', teacher.type || "");
-            
-            alert("登入成功！");
-            router.push('/setup/grade');
-          } else {
-            // --- 註冊成功邏輯 ---
-            alert("註冊成功！請直接登入。");
-            toggleMode(); // 切換回登入模式
-          }
-        } else {
-          // 🔥 這裡是重點：後端回傳 null (空字串) 代表失敗
-          if (isLoginMode.value) {
-              alert("登入失敗：帳號或密碼錯誤");
-          } else {
-              alert("註冊失敗：該帳號名稱已被使用，請換一個名字！");
-          }
-        }
-      } else {
-        alert("系統錯誤");
-      }
-    } catch (e) {
-      console.error(e);
-      alert("連線失敗");
-    }
-  };
-  </script>
+  } catch (e) {
+    alert(e.message || '系統錯誤')
+  }
+}
+</script>
 
 <style scoped>
 /* 這裡放原本 login.html 裡的 CSS */

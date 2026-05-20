@@ -1,30 +1,46 @@
-# 排課系統 (Scheduler) — Claude Code 主指南
+# 排課系統 (Scheduler) — Monorepo 總覽
 
-## 專案概覽
-學校排課系統，管理教師、課程類型、年級需求、教師可用時段，並自動生成課表。
+學校排課系統：教師登入後設定課程需求與不可排課時段，系統依規則自動產生年級課表。
 
-## 技術棧
-| 層級 | 技術 |
-|------|------|
-| 前端 | Vue 3 (Composition API + `<script setup>`) + Vite + Vue Router 4 + Pinia + Axios |
-| 後端 | Spring Boot 3.4.1 + Java 21 + Gradle + JPA + PostgreSQL + Lombok |
-| 容器 | Docker + docker-compose |
+> 這份檔案只放「整體層」的資訊。模組細節分別放在：
+>
+> - 後端規範：[scheduler-backend/CLAUDE.md](scheduler-backend/CLAUDE.md)
+> - 前端規範：[scheduler-frontend/CLAUDE.md](scheduler-frontend/CLAUDE.md)
 
-## Monorepo 結構
+## 結構
+
 ```
 scheduler/
 ├── CLAUDE.md                  ← 你在這裡
-├── scheduler-backend/         ← Spring Boot
-│   ├── main/java/com/example/scheduler/
-│   └── main/resources/
-├── scheduler-frontend/        ← Vue 3
-│   └── src/                   ← 注意：原本打錯為 srcf，請重新命名
-├── build.gradle
-├── docker-compose.yml
-└── Dockerfile
+├── README.md
+├── settings.gradle            ← Gradle 多模組設定（include scheduler-backend）
+├── gradlew / gradle/          ← Gradle Wrapper
+├── docker-compose.yml         ← 啟動 PostgreSQL
+│
+├── scheduler-backend/         ← Spring Boot 3.4.1 + Java 21
+│   ├── CLAUDE.md
+│   ├── build.gradle
+│   ├── Dockerfile
+│   └── src/main/java/com/example/scheduler/
+│
+└── scheduler-frontend/        ← Vue 3 + Vite
+    ├── CLAUDE.md
+    ├── package.json
+    └── src/
 ```
 
-## 開發規範
+## 跨模組共識（前後端都要遵守）
+
+### API 基礎路徑
+所有 API 統一前綴：`/api/v1/`
+
+### 統一回應格式
+
+```json
+{ "code": 200, "message": "success", "data": { ... } }
+```
+
+後端用 `ApiResponse<T>` 包裝、前端 Axios 攔截器拆出 `data`。
 
 ### Git 提交格式
 ```
@@ -33,36 +49,40 @@ fix(schedule): 修正衝突偵測邏輯
 style(ui): 更新課表頁面樣式
 ```
 
-### API 基礎路徑
-所有 API 統一前綴：`/api/v1/`
+## 一鍵啟動
 
-### 統一回應格式（前後端都必須遵守）
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": { ... }
-}
+```bash
+# 1. 啟動資料庫
+docker-compose up -d
+
+# 2. 啟動後端（從專案根目錄）
+./gradlew :scheduler-backend:bootRun
+
+# 3. 啟動前端
+cd scheduler-frontend && npm install && npm run dev
 ```
 
-## 當前開發進度
-- [x] 基本專案結構建立
-- [x] Teacher entity + repository
-- [x] CourseRequirement entity + repository
-- [x] ScheduleItem entity + repository
-- [x] TeacherAvailability entity + repository
-- [x] 前端路由基本頁面（Login、Schedule、Result）
-- [ ] DTO 層建立（高優先）
-- [ ] GlobalExceptionHandler（高優先）
-- [ ] CourseController / ScheduleController / AvailabilityController
-- [ ] 前端 API 層統一管理
-- [ ] Pinia store 建立
-- [ ] 前端 UI 重構（Anthropic 風格）
-- [ ] 自動排課演算法完善
-- [ ] 衝突偵測邏輯
+預設網址：
 
-## 已知問題（待修復）
-1. 前端資料夾名稱 `srcf` → 應改為 `src`
-2. 預設 Vue 模板組件未清除（HelloWorld.vue 等）
-3. 後端 Entity 直接回傳給前端，需要 DTO 隔離
-4. 缺乏統一錯誤處理
+- 前端：`http://localhost:5173`
+- 後端：`http://localhost:8080`
+- DB：`localhost:5432/schedule_db`（user: `LeeWayne`）
+
+## 開發進度
+
+- [x] 後端：4 個 Entity + Repository + Service + Controller + DTO + GlobalExceptionHandler + CorsConfig
+- [x] 後端：自動排課演算法 v1（兩階段：先科任後班導）
+- [x] 前端：基本路由與 setup 流程頁面
+- [x] 前端：API 統一封裝（axios 攔截器）
+- [ ] 前端：Pinia store
+- [ ] 前端：Anthropic 風格 UI 套版
+- [ ] 後端：密碼雜湊（目前明文，**僅限本機**）
+- [ ] 後端：DB 帳密改為環境變數
+- [ ] 後端：Entity 加 `@Column(nullable=false)`、`teachers.name` 加 UNIQUE
+- [ ] 整合：docker-compose 加入 backend / frontend 服務
+
+## 跨模組未解問題
+
+1. 後端 [application.properties](scheduler-backend/src/main/resources/application.properties) 寫死 DB 帳密 — 上 production 必須改 env var
+2. `Teacher.password` 明文存放
+3. [CorsConfig.java](scheduler-backend/src/main/java/com/example/scheduler/config/CorsConfig.java) 只允許 `localhost:5173`，部署時要改

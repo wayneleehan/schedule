@@ -32,43 +32,45 @@
   </template>
   
   <script setup>
-  import { ref, reactive, onMounted, computed } from 'vue';
-  import { useRouter } from 'vue-router';
-  
-  const router = useRouter();
-  const days = ['週一', '週二', '週三', '週四', '週五'];
+  import { reactive, onMounted, computed } from 'vue'
+  import { useRouter } from 'vue-router'
+  import { teacherApi } from '@/api/teacher'
+
+  const router = useRouter()
+  const days = ['週一', '週二', '週三', '週四', '週五']
   const PALETTE = {
       '國文': '#FFCDD2', '英文': '#BBDEFB', '數學': '#E1BEE7',
-      '自然': '#C8E6C9', '社會': '#FFF9C4', '體育': '#FFECB3', 
+      '自然': '#C8E6C9', '社會': '#FFF9C4', '體育': '#FFECB3',
       '音樂': '#D1C4E9', '美術': '#F0F4C3', '電腦': '#B2DFDB'
-  };
-  
-  const tid = localStorage.getItem('teacherId');
-  const tName = localStorage.getItem('teacherName');
-  const tGrade = localStorage.getItem('teacherGrade'); 
-  const tType = localStorage.getItem('teacherType');
-  
-  const scheduleMap = reactive({}); // key: "d-p", value: object
-  
+  }
+
+  const tid = localStorage.getItem('teacherId')
+  const tName = localStorage.getItem('teacherName')
+  const tGrade = localStorage.getItem('teacherGrade')
+  const tType = localStorage.getItem('teacherType')
+
+  const scheduleMap = reactive({})
+
   const title = computed(() => {
-      return tType === 'HOMEROOM' ? `${tGrade} 年級班級課表` : `${tName} 老師行程表`;
-  });
-  
+    return tType === 'HOMEROOM' ? `${tGrade} 年級班級課表` : `${tName} 老師行程表`
+  })
+
   const subtitle = computed(() => {
-      return tType === 'HOMEROOM' ? `導師：${tName}` : `科任教師`;
-  });
-  
+    return tType === 'HOMEROOM' ? `導師：${tName}` : `科任教師`
+  })
+
   onMounted(async () => {
-      let url = (tType === 'HOMEROOM') ? `/api/teachers/grade/${tGrade}/schedule` : `/api/teachers/${tid}/schedule`;
-      
-      try {
-          const res = await fetch(url);
-          const data = await res.json();
-          data.forEach(item => {
-              scheduleMap[`${item.dayOfWeek}-${item.period}`] = item;
-          });
-      } catch(e) { console.error(e); }
-  });
+    try {
+      const data = tType === 'HOMEROOM'
+        ? await teacherApi.getGradeSchedule(tGrade)
+        : await teacherApi.getMySchedule(tid)
+      data.forEach(item => {
+        scheduleMap[`${item.dayOfWeek}-${item.period}`] = item
+      })
+    } catch (e) {
+      alert(e.message || '載入課表失敗')
+    }
+  })
   
   const getCell = (d, p) => scheduleMap[`${d}-${p}`];
   

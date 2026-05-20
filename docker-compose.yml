@@ -1,11 +1,16 @@
-version: '3.8'
 services:
   db:
     image: postgres:15-alpine
     container_name: scheduler-db
+    restart: unless-stopped
     environment:
       POSTGRES_DB: schedule_db
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password123
+      POSTGRES_USER: LeeWayne
+      POSTGRES_PASSWORD: Lumberjacker012
     ports:
       - "5432:5432"
+    volumes:
+      - scheduler-db-data:/var/lib/postgresql/data
+
+volumes:
+  scheduler-db-data:

@@ -21,40 +21,43 @@
   </template>
   
   <script setup>
-  import { ref, reactive, onMounted } from 'vue';
-  import { useRouter } from 'vue-router';
-  
-  const router = useRouter();
-  const tid = localStorage.getItem('teacherId');
-  const subjectsList = ['國文', '英文', '數學', '自然', '社會'];
-  // 使用 reactive 物件來儲存每個科目的節數，預設為 0
-  const sessions = reactive({});
-  
+  import { reactive, onMounted } from 'vue'
+  import { useRouter } from 'vue-router'
+  import { courseApi } from '@/api/teacher'
+
+  const router = useRouter()
+  const tid = localStorage.getItem('teacherId')
+  const subjectsList = ['國文', '英文', '數學', '自然', '社會']
+  const sessions = reactive({})
+
   onMounted(async () => {
-    if (!tid) router.push('/login');
-    
-    // 初始化
-    subjectsList.forEach(s => sessions[s] = 0);
-  
-    // 讀取舊資料
-    const res = await fetch(`/api/teachers/${tid}/courses`);
-    const data = await res.json();
-    data.forEach(item => {
-      if (sessions[item.subject] !== undefined) {
-        sessions[item.subject] = item.sessions;
-      }
-    });
-  });
-  
+    if (!tid) { router.push('/login'); return }
+    subjectsList.forEach(s => { sessions[s] = 0 })
+
+    try {
+      const data = await courseApi.getCourses(tid)
+      data.forEach(item => {
+        if (sessions[item.subject] !== undefined) {
+          sessions[item.subject] = item.sessions
+        }
+      })
+    } catch (e) {
+      alert(e.message || '載入課程需求失敗')
+    }
+  })
+
   const nextStep = async () => {
-    await fetch(`/api/teachers/${tid}/courses`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(sessions)
-    });
-    
-    router.push('/setup/availability');
-  };
+    const payload = subjectsList
+      .filter(s => sessions[s] > 0)
+      .map(s => ({ subject: s, sessions: sessions[s] }))
+
+    try {
+      await courseApi.updateCourses(tid, payload)
+      router.push('/setup/availability')
+    } catch (e) {
+      alert(e.message || '儲存課程需求失敗')
+    }
+  }
   </script>
   
   <style scoped>
